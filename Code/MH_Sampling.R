@@ -62,8 +62,8 @@ C_index <- function(theta, Wmat) {
 }
 
 
-MH_Sampling <- function(Y,delta,tau,
-                        A,beta0,sigma0,var.prop,
+MH_Sampling <- function(tti,Y,Y.test,delta,delta.test,tau,
+                        A,A.test,beta0,sigma0,var.prop,
                         m,B,eta,
                         Wmat_option){
   
@@ -73,9 +73,11 @@ MH_Sampling <- function(Y,delta,tau,
   
   # What we want to record
   BETA = matrix(0,m,dim(A)[2])
+  BETA.test = matrix(0,m,dim(A.test)[2])
   ThetaRecord <- matrix(0, m, length(Y))
+  ThetaRecord.test <- matrix(0, m, length(Y.test))
   C_stat = c()
-  
+  C_stat.test = c()
   
   # For safety m>B
   if (B>m){
@@ -87,10 +89,13 @@ MH_Sampling <- function(Y,delta,tau,
   # 1 means we use Uno C statistics
   if (Wmat_option==0){
     Wmat <- HarrellC_Wmat(Y, delta, tau)
+    Wmat.test <- HarrellC_Wmat(Y.test, delta.test, tau)
   }else if (Wmat_option==1){
     Wmat <- UnoC_Wmat(Y, delta, tau)
+    Wmat.test <- UnoC_Wmat(Y.test, delta.test, tau)
   }else{  # Other Possible C index...
     Wmat <- HarrellC_Wmat(Y, delta, tau)
+    Wmat.test <- HarrellC_Wmat(Y.test, delta.test, tau)
   }
   
   
@@ -128,18 +133,28 @@ MH_Sampling <- function(Y,delta,tau,
     }
     BETA[i,] = beta
     
+    theta.test = THETA(A.test,beta)
+    ThetaRecord.test[i,] <- theta.test
+    
+    HC.test = C_index(theta.test,Wmat.test)
+    C_stat.test = c(C_stat.test,HC.test)
+    
   }
   
   if (B == 0){
     return(list(BETA=BETA,
                 accept_rate=accept/m,
                 THETA = ThetaRecord,
-                C_stat = C_stat))
+                THETA.test = ThetaRecord.test,
+                C_stat = C_stat,
+                C_stat.test = C_stat.test))
   }else{
     return(list(BETA=BETA[-c(1:B),],
                 accept_rate=accept/m,
                 THETA = ThetaRecord[-c(1:B),],
-                C_stat = C_stat[-c(1:B)]))
+                THETA.test = ThetaRecord.test[-c(1:B),],
+                C_stat = C_stat[-c(1:B)],
+                C_stat.test = C_stat.test[-c(1:B)]))
   }
   
   
